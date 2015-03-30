@@ -36,3 +36,9 @@ config.json
 
     parser.register_conversion_handler('unicode', lambda value: str(value))
 
+
+Затем для их использования:
+---------------------------
+::
+
+    parser.get_converted('test.value', 'unicode')
