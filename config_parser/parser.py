@@ -1,13 +1,10 @@
 # coding: utf-8
+import json
 import warnings
-from decimal import Decimal
 from functools import reduce
-
 from config_parser.enums import ConversionTypeEnum
 from config_parser.exceptions import ConversionTypeError
-from config_parser.loader.json_loader import JSONLoader
-from config_parser.utils import _
-
+from config_parser.conversions import CONVERSION_TABLE
 
 __author__ = 'damirazo <me@damirazo.ru>'
 
@@ -17,17 +14,15 @@ class ConfigParser(object):
     Парсер конфигурационных файлов в формате json
     """
 
-    def __init__(self, file_path, loader=JSONLoader):
+    def __init__(self, file_path):
         self.file_path = file_path
-        self.loader = loader(file_path)
-        self.data = self.loader.data
+        self._fd = open(self.file_path)
+        self.data = json.load(self._fd)
         # Таблица соответствия типов конвертирования и конвертирующих функций
-        self.conversion_table = {
-            ConversionTypeEnum.INTEGER: int,
-            ConversionTypeEnum.DECIMAL: Decimal,
-            ConversionTypeEnum.BOOL: self._boolean_conversion_handler,
-            ConversionTypeEnum.STRING: str,
-        }
+        self.conversion_table = CONVERSION_TABLE
+
+    def __del__(self):
+        self._fd.close()
 
     def register_conversion_handler(self, name, handler):
         u"""
@@ -37,9 +32,9 @@ class ConfigParser(object):
         :param handler: Обработчик
         """
         if name in self.conversion_table:
-            warnings.warn(_(
+            warnings.warn((
                 u'Конвертирующий тип с именем {} уже '
-                u'существует и будет перезатерт!'
+                u'существует и будет перезаписан!'
             ).format(name))
 
         self.conversion_table[name] = handler
@@ -54,7 +49,7 @@ class ConfigParser(object):
         try:
             handler = self.conversion_table[name]
         except KeyError:
-            raise KeyError(_(
+            raise KeyError((
                 u'Конвертирующий тип с именем {} отсутствует '
                 u'в таблице соответствия!'
             ).format(name))
@@ -108,28 +103,51 @@ class ConfigParser(object):
         try:
             value = handler(value)
         except Exception as exc:
-            raise ConversionTypeError(_(
+            raise ConversionTypeError((
                 u'Произошла ошибка при попытке преобразования типа: {}'
             ).format(exc))
 
         return value
 
+    def get_by_type(self, key, conversion_func, default=None):
+        u"""
+        Возвращает значение, приведенное к типу
+        с использованием переданной функции
+
+        :param key: Имя параметра
+        :param conversion_func: callable объект,
+            принимающий и возвращающий значение
+        :param default: Значение по умолчанию
+        :return: mixed
+        """
+        if not self.has_param(key):
+            return default
+
+        value = self.get(key, default=default)
+
+        try:
+            value = conversion_func(value)
+        except Exception as exc:
+            raise ConversionTypeError((
+                u'Произошла ошибка при попытке преобразования типа: {}'
+            ).format(exc))
+
+        return value
+
+    # -------------------------------------------------------------------------
+    # Синтаксический сахар
+    # -------------------------------------------------------------------------
+
     def get_int(self, key, default=None):
+        u"""
+        Возвращает значение, приведенное к числовому
+        """
         return self.get_converted(
             key, ConversionTypeEnum.INTEGER, default=default)
 
     def get_bool(self, key, default=None):
+        u"""
+        Возвращает значение, приведенное к булеву
+        """
         return self.get_converted(
             key, ConversionTypeEnum.BOOL, default=default)
-
-    # =========================================================================
-    # Обработчики различных типов
-    # =========================================================================
-
-    @staticmethod
-    def _boolean_conversion_handler(value):
-        value = value.lower()
-        if value in ('true', 'false'):
-            return value == 'true'
-
-        return bool(value)
