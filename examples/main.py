@@ -1,5 +1,5 @@
 # coding: utf-8
-from config_parser.parser import ConfigParser
+from config_parser import ConfigParser
 
 __author__ = 'damirazo <me@damirazo.ru>'
 

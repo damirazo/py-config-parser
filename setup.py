@@ -7,14 +7,14 @@ from setuptools import setup, find_packages
 
 setup(
     name='py-config-parser',
-    version='1.1',
+    version='1.2',
     description='Simple python json configuration file parser',
     url='https://github.com/damirazo/py-config-parser',
     author='damirazo',
     author_email='me@damirazo.ru',
     license='MIT',
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Code Generators',
         'License :: OSI Approved :: MIT License',
@@ -24,6 +24,8 @@ setup(
         'Programming Language :: Python :: 3.2',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
     ],
     keywords='config parser json',
     packages=find_packages(),
